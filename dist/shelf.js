@@ -1,4 +1,4 @@
-/*! a11ybookclub-shelf v1.4.1 | Accessibility Book Club | MIT */
+/*! a11ybookclub-shelf v1.4.2 | Accessibility Book Club | MIT */
 /* ==========================================================================
    ACCESSIBILITY BOOK CLUB · 3D SHELF
    - Source of truth: the .shelf_book-item list above (the Webflow Collection List).
@@ -296,6 +296,10 @@ function fitText(x, text, maxW) {
 class Shelf {
   constructor(section, books) {
     this.section = section;
+    // Remember the last input type so programmatic focus only shows a ring for keyboard users
+    this.lastInput = 'keyboard';
+    document.addEventListener('pointerdown', () => { this.lastInput = 'pointer'; }, true);
+    document.addEventListener('keydown', () => { this.lastInput = 'keyboard'; }, true);
     this.books = books;
     this.stage = section.querySelector('.shelf__stage');
     this.canvas = section.querySelector('.shelf__canvas');
@@ -708,7 +712,17 @@ class Shelf {
       const extra = d.scrollHeight - this.stage.clientHeight;
       if (extra > 0) this.section.style.paddingBottom = extra + 'px';
     }
-    d.querySelector('.detail__title').focus({ preventScroll: true });   // focus moves to the heading of what just opened
+    const title = d.querySelector('.detail__title');
+    if (this.lastInput === 'pointer') {
+      title.setAttribute('data-pointer-focus', '');
+      // A keypress after a mouse open means the visitor switched to keyboard: show the ring again
+      const showRing = () => title.removeAttribute('data-pointer-focus');
+      title.addEventListener('keydown', showRing, { once: true });
+      title.addEventListener('blur', showRing, { once: true });
+    } else {
+      title.removeAttribute('data-pointer-focus');
+    }
+    title.focus({ preventScroll: true });   // focus moves to the heading of what just opened
     this.statusEl.textContent = '';
   }
 

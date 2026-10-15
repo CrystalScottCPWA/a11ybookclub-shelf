@@ -1,4 +1,4 @@
-/*! a11ybookclub-shelf v1.4.1 | MIT */
+/*! a11ybookclub-shelf v1.4.2 | MIT */
 /* =========================================================
      DESIGN TOKENS
      Swap these for the Webflow site variables once the new
@@ -164,6 +164,10 @@
   .detail__title { margin: 0 0 .25rem; font-size: clamp(1.6rem, 3vw, 2.4rem); line-height: 1.15; }
   .detail__title:focus { outline: none; }
   .detail__title:focus-visible { outline: 3px solid currentColor; outline-offset: 4px; }
+  /* Opened by mouse or touch: focus still lands on the heading, but no ring is drawn.
+     !important beats site-wide focus styles from Webflow. */
+  .detail__title[data-pointer-focus]:focus,
+  .detail__title[data-pointer-focus]:focus-visible { outline: none !important; box-shadow: none !important; }
   .detail__subtitle { margin: 0 0 1rem; font-size: 1.1rem; font-style: italic; }
   .detail__author { margin: 0 0 1rem; font-weight: 700; }
   .detail__desc { margin: 0 0 1.5rem; max-width: 34rem; }
