@@ -1,7 +1,7 @@
-/*! a11ybookclub-shelf v1.0.0 | Accessibility Book Club | MIT */
+/*! a11ybookclub-shelf v1.1.0 | Accessibility Book Club | MIT */
 /* ==========================================================================
    ACCESSIBILITY BOOK CLUB · 3D SHELF
-   - Source of truth: the .book-item list above (the Webflow Collection List).
+   - Source of truth: the .shelf_book-item list above (the Webflow Collection List).
    - The canvas is aria-hidden. All meaning lives in HTML:
      view toggle, Prev/Next, markers, the Open button, the detail panel,
      and a polite live region.
@@ -45,21 +45,72 @@ let shelf = null;
 /* ==========================================================================
    2. READ BOOKS FROM THE LIST
    ========================================================================== */
-const books = [...document.querySelectorAll('[data-book-list] .book-item')].map((el, i) => ({
-  index: i,
-  el,
-  title: el.dataset.title,
-  subtitle: el.dataset.subtitle || '',
-  author: el.dataset.author || '',
-  cover: el.dataset.cover || '',
-  spineImage: el.dataset.spineImage || '',
-  spineColor: el.dataset.spineColor || '',
-  buy: el.dataset.buy || '',
-  url: el.dataset.url || '#',
-  desc: el.querySelector('[data-desc]')?.textContent.trim() || '',
-  // Thicker books for longer books: 148 pages reads slim, 572 pages reads chunky
-  thickness: Math.max(0.16, Math.min(0.4, 0.1 + (parseInt(el.dataset.pages, 10) || 260) * 0.00052)),
-}));
+/* Webflow outputs empty CMS bindings with class w-dyn-bind-empty; treat those as missing */
+const txt = n => (n && !n.classList.contains('w-dyn-bind-empty') ? n.textContent.trim() : '');
+const initialsOf = name => {
+  const p = name.split(/\s+/).filter(w => /^[A-Za-zÀ-ɏ]/.test(w));
+  return p.length ? (p[0][0] + (p.length > 1 ? p[p.length - 1][0] : '')).toUpperCase() : '';
+};
+
+/** Tidy the CMS output for BOTH views: compose the author line, drop empty author cards,
+    swap missing headshots for initials, hide empty buy links, placeholder for missing covers. */
+function tidy(el) {
+  const authorEl = el.querySelector('.shelf_book-author');
+  const a1 = txt(authorEl), a2 = (el.dataset.author2 || '').trim();
+  if (authorEl && a2 && !a1.includes(a2)) authorEl.textContent = a1 ? `${a1} and ${a2}` : a2;
+
+  el.querySelectorAll('[data-authors] .shelf_author').forEach(card => {
+    const name = txt(card.querySelector('.shelf_author-name'));
+    if (!name) { card.remove(); return; }
+    const photo = card.querySelector('.shelf_author-photo');
+    if (photo && (photo.classList.contains('w-dyn-bind-empty') || !photo.getAttribute('src'))) {
+      const span = document.createElement('span');
+      span.className = 'shelf_author-initials'; span.setAttribute('aria-hidden', 'true');
+      span.textContent = initialsOf(name);
+      photo.replaceWith(span);
+    }
+    const logo = card.querySelector('.shelf_author-logo');
+    if (logo && (logo.classList.contains('w-dyn-bind-empty') || !logo.getAttribute('src'))) logo.remove();
+  });
+  const summary = el.querySelector('.shelf_book-more summary [data-summary-label]');
+  if (summary) summary.textContent = el.querySelectorAll('[data-authors] .shelf_author').length > 1 ? 'Details and authors' : 'Details and author';
+
+  const buy = el.querySelector('.shelf_book-buy');
+  if (buy) { const h = buy.getAttribute('href'); if (!h || h === '#' || buy.classList.contains('w-dyn-bind-empty')) buy.remove(); }
+
+  const cover = el.querySelector('img.shelf_book-cover');
+  if (cover && (cover.classList.contains('w-dyn-bind-empty') || !cover.getAttribute('src'))) {
+    const ph = document.createElement('div');
+    ph.className = 'shelf_book-cover shelf_cover-placeholder'; ph.setAttribute('aria-hidden', 'true');
+    ph.textContent = txt(el.querySelector('.shelf_book-title')) + ' · Coming soon';
+    cover.replaceWith(ph);
+  }
+}
+
+const books = [...document.querySelectorAll('[data-book-list] .shelf_book-item')].map((el, i) => {
+  tidy(el);
+  const q = s => el.querySelector(s);
+  const cover = q('img.shelf_book-cover');
+  const buy = q('.shelf_book-buy');
+  const titleLink = q('.shelf_book-title a');
+  const details = q('[data-details]');
+  const pages = parseInt(el.dataset.pages, 10) || parseInt(((details && details.textContent) || '').match(/Print length\s+(\d+)/i)?.[1], 10) || 260;
+  return {
+    index: i,
+    el,
+    title: el.dataset.title || txt(q('.shelf_book-title')),
+    subtitle: el.dataset.subtitle || txt(q('.shelf_book-subtitle')),
+    author: el.dataset.author || txt(q('.shelf_book-author')),
+    cover: el.dataset.cover || (cover ? cover.getAttribute('src') : ''),
+    spineImage: el.dataset.spineImage || '',
+    spineColor: (el.dataset.spineColor || '').trim(),
+    buy: el.dataset.buy || (buy ? buy.getAttribute('href') : ''),
+    url: el.dataset.url || (titleLink ? titleLink.getAttribute('href') : '#'),
+    desc: txt(q('[data-desc]')),
+    // Thicker books for longer books: 148 pages reads slim, 572 pages reads chunky
+    thickness: Math.max(0.16, Math.min(0.4, 0.1 + pages * 0.00052)),
+  };
+});
 
 /* ==========================================================================
    3. COLOR + CONTRAST HELPERS (SC 1.4.3, 1.4.11)
@@ -575,7 +626,7 @@ class Shelf {
     // Facts and author cards are copied from the book's own list item (the CMS is the source)
     const facts = book.el.querySelector('[data-details]');
     d.querySelector('[data-detail-facts]').innerHTML = facts ? facts.innerHTML : '';
-    const authors = [...book.el.querySelectorAll('[data-authors] .author')];
+    const authors = [...book.el.querySelectorAll('[data-authors] .shelf_author')];
     const holder = d.querySelector('[data-detail-authors]');
     holder.replaceChildren(...authors.map(a => a.cloneNode(true)));
     const heading = d.querySelector('[data-detail-authors-heading]');
