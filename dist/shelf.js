@@ -1,4 +1,4 @@
-/*! a11ybookclub-shelf v1.4.2 | Accessibility Book Club | MIT */
+/*! a11ybookclub-shelf v1.4.3 | Accessibility Book Club | MIT */
 /* ==========================================================================
    ACCESSIBILITY BOOK CLUB · 3D SHELF
    - Source of truth: the .shelf_book-item list above (the Webflow Collection List).
@@ -75,6 +75,19 @@ function tidy(el) {
   });
   const summary = el.querySelector('.shelf_book-more summary [data-summary-label]');
   if (summary) summary.textContent = el.querySelectorAll('[data-authors] .shelf_author').length > 1 ? 'Details and authors' : 'Details and author';
+
+  // Book page link: the Collection Page link can publish as "#"; rebuild it from the bound slug
+  const titleLink = el.querySelector('.shelf_book-title a');
+  const slug = (el.dataset.slug || '').trim();
+  if (titleLink && slug) {
+    const h = titleLink.getAttribute('href');
+    // Anything that isn't a real book page ("#", "detail_books", empty) gets /books/<slug>
+    if (!h || !/\/books\/[^/#?]+/.test(h)) titleLink.setAttribute('href', `/books/${slug}`);
+  }
+
+  // Inline links inside rich text use the site's underlined link class, so they are
+  // distinguishable from surrounding text without relying on color (SC 1.4.1)
+  el.querySelectorAll('[data-details] a').forEach(a => a.classList.add('text-style-link'));
 
   const buy = el.querySelector('.shelf_book-buy');
   if (buy) { const h = buy.getAttribute('href'); if (!h || h === '#' || buy.classList.contains('w-dyn-bind-empty')) buy.remove(); }

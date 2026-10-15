@@ -1,4 +1,4 @@
-/*! a11ybookclub-shelf v1.4.2 | MIT */
+/*! a11ybookclub-shelf v1.4.3 | MIT */
 /* =========================================================
      DESIGN TOKENS
      Swap these for the Webflow site variables once the new
@@ -179,6 +179,10 @@
   .detail__link--primary { background: var(--fg); color: var(--bg); --ring-contrast: var(--bg); }
   .shelf_detail-facts ul { margin: 0 0 1.5rem; padding-left: 1.2rem; font-size: .95rem; }
   .shelf_detail-facts li { margin: .15rem 0; }
+  /* Inline links in the facts list: always underlined (SC 1.4.1). On the colored detail panel
+     they take the panel's text color, which is pre-checked to 4.5:1 (SC 1.4.3). */
+  .shelf_detail-facts a { text-decoration: underline; text-underline-offset: 2px; }
+  .shelf__detail .shelf_detail-facts a { color: inherit; }
   .detail__authors-heading { margin: 2rem 0 1rem; font-size: 1.15rem; }
 
   /* Author card: shared by the detail panel and the list view */
