@@ -1,0 +1,17 @@
+<script>
+  (function () {
+    var root = document.documentElement;
+    var forceOff = /[?&]nowebgl\b/.test(location.search);
+    var hasGL = false;
+    if (!forceOff) {
+      try {
+        var c = document.createElement('canvas');
+        hasGL = !!(window.WebGL2RenderingContext && c.getContext('webgl2'));
+      } catch (e) { hasGL = false; }
+    }
+    var saved = null;
+    try { saved = localStorage.getItem('abc-shelf-view'); } catch (e) {}
+    root.dataset.webgl = hasGL ? 'yes' : 'no';
+    root.dataset.view = hasGL && saved !== 'list' ? 'shelf' : 'list';
+  })();
+</script>

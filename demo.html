@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TechShare Pro 2026 Curated Reading List | Accessibility Book Club</title>
+<meta name="description" content="Books by the authors attending TechShare Pro 2026, curated by the Accessibility Book Club. Browse the 3D shelf or the list.">
+
+<!-- Font: Atkinson Hyperlegible (stand-in until the new ABC brand fonts are confirmed) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+
+<!--
+  EARLY VIEW SWITCH (runs before first paint so the list never flashes before the shelf).
+  - Checks WebGL support and the ?nowebgl test switch.
+  - Reads the visitor's saved view choice (try/catch: storage can throw in private modes).
+  - Sets <html data-view="shelf|list"> and data-webgl="yes|no". CSS does the rest.
+-->
+<script>
+  (function () {
+    var root = document.documentElement;
+    var forceOff = /[?&]nowebgl\b/.test(location.search);
+    var hasGL = false;
+    if (!forceOff) {
+      try {
+        var c = document.createElement('canvas');
+        hasGL = !!(window.WebGL2RenderingContext && c.getContext('webgl2'));
+      } catch (e) { hasGL = false; }
+    }
+    var saved = null;
+    try { saved = localStorage.getItem('abc-shelf-view'); } catch (e) {}
+    root.dataset.webgl = hasGL ? 'yes' : 'no';
+    root.dataset.view = hasGL && saved !== 'list' ? 'shelf' : 'list';
+  })();
+</script>
+
+<!-- three.js 0.186.0, pinned, loaded as ES modules from jsDelivr -->
+
+<link rel="stylesheet" href="dist/shelf.css">
+<style>body{margin:0;background:var(--page-bg);color:var(--page-fg);font:400 1.0625rem/1.6 var(--font)}.page-header{max-width:72rem;margin:0 auto;padding:3rem 1rem 1.5rem}.eyebrow{margin:0 0 .5rem;color:var(--accent);font-weight:700}h1{margin:0 0 1rem;font-size:clamp(2rem,5vw,3.25rem);line-height:1.1}.lede{max-width:44rem;margin:0 0 1.5rem;color:var(--page-muted);font-size:1.15rem}.skip-link{position:absolute;left:1rem;top:-100px}.skip-link:focus{top:1rem}</style>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<main id="main">
+  <header class="page-header">
+    <p class="eyebrow">AbilityNet TechShare Pro 2026 · London</p>
+    <h1>The TechShare Pro 2026 reading list</h1>
+    <p class="lede">Every book here was written by someone joining us at TechShare Pro. Find them at the book club corner in the main hall at lunch on both days.</p>
+
+    <!-- View toggle. Two buttons, one pressed. Hidden entirely when WebGL is unavailable. -->
+    <div class="view-toggle" role="group" aria-labelledby="view-toggle-label">
+      <span class="view-toggle__label" id="view-toggle-label">View books as</span>
+      <span class="view-toggle__group">
+        <button type="button" data-view-btn="shelf" aria-pressed="false">Shelf</button>
+        <button type="button" data-view-btn="list" aria-pressed="false">List</button>
+      </span>
+    </div>
+  </header>
+
+  <!-- ================= SHELF VIEW (built by script from the list below) ================= -->
+  <section id="shelf" class="shelf" aria-labelledby="shelf-heading">
+    <h2 id="shelf-heading" class="sr-only">Bookshelf</h2>
+    <div class="shelf__stage">
+      <!-- The canvas is decoration. Everything it shows also exists as HTML. -->
+      <canvas class="shelf__canvas" aria-hidden="true"></canvas>
+      <div class="shelf__loading" aria-hidden="true">Setting out the books…</div>
+
+      <p class="shelf__instructions" id="shelf-instructions"><span class="for-fine">Use the arrow keys or the buttons to browse. Press Enter to open a book.</span><span class="for-coarse">Swipe sideways or use the buttons to browse. Tap the title to open it.</span></p>
+
+      <ol class="shelf__markers" aria-label="Jump to a book"></ol>
+
+      <div class="shelf__bar">
+        <button type="button" class="shelf__btn" data-prev aria-label="Previous book">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 15l6-6 6 6" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button type="button" class="shelf__open" data-open aria-describedby="shelf-instructions">
+          <span class="sr-only">Open </span><span class="shelf__open-title"></span>
+          <span class="shelf__open-author"></span>
+        </button>
+        <button type="button" class="shelf__btn" data-next aria-label="Next book">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <span class="shelf__count" aria-hidden="true"></span>
+      </div>
+
+    </div>
+
+      <!-- Detail panel (filled from the list item of the open book) -->
+    <div class="shelf__detail" hidden>
+      <button type="button" class="shelf__btn detail__back" data-back>
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M15 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>&nbsp;Back to the shelf</span>
+      </button>
+      <h2 class="detail__title" tabindex="-1"></h2>
+      <p class="detail__subtitle"></p>
+      <p class="detail__author"></p>
+      <p class="detail__desc"></p>
+      <div class="detail__facts" data-detail-facts></div>
+      <div class="detail__links">
+        <a class="detail__link detail__link--primary" data-detail-buy href="#">Buy on Amazon</a>
+        <a class="detail__link" data-detail-more href="#">About this book</a>
+      </div>
+      <h3 class="detail__authors-heading" data-detail-authors-heading>About the author</h3>
+      <div class="detail__authors" data-detail-authors></div>
+    </div>
+
+    <!-- Polite status for screen readers: "Strong Girls by Jodie Ounsley, 4 of 13" -->
+    <p class="sr-only" role="status" aria-live="polite" data-status></p>
+  </section>
+
+  <!-- ================= LIST VIEW =================
+       This mirrors the Webflow Collection List:
+       Books collection, filtered on "TechShare Pro 2026" = on.
+       The 3D shelf reads everything from this markup. data-* attributes
+       are Webflow custom attributes bound to CMS fields.
+  -->
+  <section id="list" class="list" aria-labelledby="list-heading">
+    <h2 id="list-heading" class="sr-only">All books</h2>
+    <ul class="book-list" data-book-list>
+      <li class="book-item"
+          data-title="Strong Girls" data-subtitle="Be Powerful, Be Positive, Be a Team Player" data-author="Jodie Ounsley and Becky Grey"
+          data-cover="https://cdn.prod.website-files.com/67507636f665703150ecbcc6/6ad12272f93f6ca32ccd693e_9781035064076.jpeg" data-spine-image="" data-spine-color=""
+          data-buy="https://link.amazon/B0h5Eovgd" data-url="https://a11ybookclub.com/books/strong-girls" data-pages="224">
+        <article class="book-card">
+          <img class="book-card__cover" loading="lazy" src="https://cdn.prod.website-files.com/67507636f665703150ecbcc6/6ad12272f93f6ca32ccd693e_9781035064076.jpeg" alt="Strong Girls book cover: Jodie Ounsley roars with a raised fist against a vivid blue background, with the title in large white letters and stars">
+          <h3 class="book-card__title"><a href="https://a11ybookclub.com/books/strong-girls">Strong Girls</a></h3>
+          <p class="book-card__author">Jodie Ounsley and Becky Grey</p>
+          <p class="book-card__desc" data-desc>Jodie Ounsley&#x27;s follow-up shows girls aged 8 and up that strength means mindset, resilience and lifting each other up.</p>
+          <details class="book-card__more">
+            <summary>Details and authors<span class="sr-only">: Strong Girls</span></summary>
+            <div class="detail__facts" data-details><ul><li>Print length 224 pages</li><li>Publication date April 9, 2026</li><li>Reading age 8 to 11</li><li>Available in Paperback, eBook and Audiobook read by the author</li></ul></div>
+            <div class="author-list" data-authors><div class="author"><span class="author__initials" aria-hidden="true">JO</span><div><p class="author__name">Jodie Ounsley</p><p class="author__role">Former England rugby player and Gladiators&#x27; Fury</p><p class="author__bio">Jodie is profoundly deaf, played rugby for England and is known to millions as Fury on Gladiators. She writes for young readers about confidence and turning differences into strengths.</p></div></div><div class="author"><span class="author__initials" aria-hidden="true">BG</span><div><p class="author__name">Becky Grey</p><p class="author__role">Sports journalist</p><p class="author__bio">Becky Grey is a sports journalist and Jodie&#x27;s co-writer on both of her books.</p></div></div></div>
+          </details>
+          <a class="book-card__buy" href="https://link.amazon/B0h5Eovgd">Buy on Amazon<span class="sr-only">: Strong Girls</span></a>
+        </article>
+      </li>
+
+      <li class="book-item"
+          data-title="The Smart Marketer&#x27;s Guide to Digital Accessibility" data-subtitle="How to Make Inclusion Your Advantage" data-author="Sassy Wyatt"
+          data-cover="https://cdn.prod.website-files.com/67507636f665703150ecbcc6/6ad121dcf565e9fae8c72edd_9781068275104_p0.jpeg" data-spine-image="" data-spine-color=""
+          data-buy="https://link.amazon/B0dPSivqC" data-url="https://a11ybookclub.com/books/the-smart-marketers-guide-to-digital-accessibility" data-pages="356">
+        <article class="book-card">
+          <img class="book-card__cover" loading="lazy" src="https://cdn.prod.website-files.com/67507636f665703150ecbcc6/6ad121dcf565e9fae8c72edd_9781068275104_p0.jpeg" alt="The Smart Marketer&#x27;s Guide to Digital Accessibility book cover: an illustration of two people at a café table with a laptop, a phone, a white cane and a guide dog, on a pale lilac background">
+          <h3 class="book-card__title"><a href="https://a11ybookclub.com/books/the-smart-marketers-guide-to-digital-accessibility">The Smart Marketer&#x27;s Guide to Digital Accessibility</a></h3>
+          <p class="book-card__author">Sassy Wyatt</p>
+          <p class="book-card__desc" data-desc>Sassy Wyatt gives marketers a practical framework for accessible content, from alt text to captions, that widens their reach.</p>
+          <details class="book-card__more">
+            <summary>Details and author<span class="sr-only">: The Smart Marketer&#x27;s Guide to Digital Accessibility</span></summary>
+            <div class="detail__facts" data-details><ul><li>Print length 356 pages (16pt large print)</li><li>Publication date June 28, 2025</li><li>Available in Large Print Paperback and Kindle eBook</li></ul></div>
+            <div class="author-list" data-authors><div class="author"><span class="author__initials" aria-hidden="true">SW</span><div><p class="author__name">Sassy Wyatt</p><p class="author__role">Accessibility consultant, speaker and travel journalist</p><p class="author__bio">Sassy lost her sight at 22 and went on to build Blind Girl Adventures and an award-winning career in accessible travel writing. She now consults and speaks on accessible marketing.</p></div></div></div>
+          </details>
+          <a class="book-card__buy" href="https://link.amazon/B0dPSivqC">Buy on Amazon<span class="sr-only">: The Smart Marketer&#x27;s Guide to Digital Accessibility</span></a>
+        </article>
+      </li>
+
+      <li class="book-item"
+          data-title="Creative Leadership" data-subtitle="How to Design the 21st-century Organisation" data-author="Rama Gheerawo"
+          data-cover="https://cdn.prod.website-files.com/67507636f665703150ecbcc6/6ad121dbf565e9fae8c72ecc_9781804954089-jacket-large.jpeg" data-spine-image="" data-spine-color=""
+          data-buy="https://link.amazon/B071QY17n" data-url="https://a11ybookclub.com/books/creative-leadership" data-pages="176">
+        <article class="book-card">
+          <img class="book-card__cover" loading="lazy" src="https://cdn.prod.website-files.com/67507636f665703150ecbcc6/6ad121dbf565e9fae8c72ecc_9781804954089-jacket-large.jpeg" alt="Creative Leadership book cover: a long yellow pencil runs diagonally across a white cover with the title in bold black letters along its length">
+          <h3 class="book-card__title"><a href="https://a11ybookclub.com/books/creative-leadership">Creative Leadership</a></h3>
+          <p class="book-card__author">Rama Gheerawo</p>
+          <p class="book-card__desc" data-desc>Rama Gheerawo shows how creativity, clarity and empathy can reshape leadership, drawing on more than 100 inclusive design projects.</p>
+          <details class="book-card__more">
+            <summary>Details and author<span class="sr-only">: Creative Leadership</span></summary>
+            <div class="detail__facts" data-details><ul><li>Print length 176 pages</li><li>Publication date April 17, 2025 (UK), September 2, 2025 (US)</li><li>Available in Paperback, eBook and Audiobook read by the author</li></ul></div>
+            <div class="author-list" data-authors><div class="author"><span class="author__initials" aria-hidden="true">RG</span><div><p class="author__name">Rama Gheerawo</p><p class="author__role">Former Director, Helen Hamlyn Centre for Design, Royal College of Art</p><p class="author__bio">Rama led the Helen Hamlyn Centre for Design at the Royal College of Art. His ideas come from more than 100 inclusive design projects with governments, businesses and charities.</p></div></div></div>
+          </details>
+          <a class="book-card__buy" href="https://link.amazon/B071QY17n">Buy on Amazon<span class="sr-only">: Creative Leadership</span></a>
+        </article>
+      </li>
+
+      <li class="book-item"
+          data-title="Accessibility: The Illustrated Guide" data-subtitle="Making digital communication inclusive for everyone" data-author="Nandita Gupta and Rachel Grossman-Kahn"
+          data-cover="https://cdn.prod.website-files.com/67507636f665703150ecbcc6/6a81cc9b2602657800e7cb65_71BnsqsSMIL._SY385_.jpg" data-spine-image="" data-spine-color=""
+          data-buy="https://amzn.to/4qi0nXo" data-url="https://a11ybookclub.com/books/accessibility-the-illustrated-guide" data-pages="148">
+        <article class="book-card">
+          <img class="book-card__cover" loading="lazy" src="https://cdn.prod.website-files.com/67507636f665703150ecbcc6/6a81cc9b2602657800e7cb65_71BnsqsSMIL._SY385_.jpg" alt="Accessibility: The Illustrated Guide book cover by Nandita Gupta and Rachel Grossman-Kahn">
+          <h3 class="book-card__title"><a href="https://a11ybookclub.com/books/accessibility-the-illustrated-guide">Accessibility: The Illustrated Guide</a></h3>
+          <p class="book-card__author">Nandita Gupta and Rachel Grossman-Kahn</p>
+          <p class="book-card__desc" data-desc>An illustrated introduction to inclusive digital communication, covering documents, email, social posts, and video for non-specialists.</p>
+          <details class="book-card__more">
+            <summary>Details and authors<span class="sr-only">: Accessibility: The Illustrated Guide</span></summary>
+            <div class="detail__facts" data-details><ul><li>Print length 148 pages</li><li>Publication date September 9, 2026</li><li>Published by Packt</li><li>Available in Paperback and eBook</li></ul></div>
+            <div class="author-list" data-authors><div class="author"><img class="author__photo" src="https://cdn.prod.website-files.com/67507636f665703150ecbcc6/6a81cd5904ec558480991f38_1783371494045.jpg" alt="" width="64" height="64" loading="lazy"><div><p class="author__name">Nandita Gupta</p><p class="author__role">Accessibility Program Manager at Cisco, CPACC</p><p class="author__bio">Nandita is a product and accessibility leader at Cisco and holds the CPACC credential. She was inducted into the Susan M. Daniels Disability Mentoring Hall of Fame and named to ADCOLOR in Tech in 2024.</p><img class="author__logo" src="https://cdn.prod.website-files.com/67507636f665703150ecbcc6/6a81cc881aedb0161f9163a6_cisco-logo-png_seeklogo-212506.png" alt="Cisco" loading="lazy"></div></div><div class="author"><img class="author__photo" src="https://cdn.prod.website-files.com/67507636f665703150ecbcc6/6a81ca3867261368284e5a2e_IMG_4877_edited_edited.jpeg" alt="" width="64" height="64" loading="lazy"><div><p class="author__name">Rachel Grossman-Kahn</p><p class="author__role">Senior UX Designer, Audible at Amazon</p><p class="author__bio">Rachel leads accessibility and inclusive design on Audible at Amazon. She spent a decade as a sign language interpreter for d/Deaf and DeafBlind communities and a few years at Walt Disney Animation Studios.</p><img class="author__logo" src="https://cdn.prod.website-files.com/67507636f665703150ecbcc6/6a81ccef257ecdddd8ce0aed_Audible_logo.svg.webp" alt="Audible" loading="lazy"></div></div></div>
+          </details>
+          <a class="book-card__buy" href="https://amzn.to/4qi0nXo">Buy on Amazon<span class="sr-only">: Accessibility: The Illustrated Guide</span></a>
+        </article>
+      </li>
+
+      <li class="book-item"
+          data-title="Digital Accessibility Ethics" data-subtitle="Disability Inclusion in All Things Tech" data-author="Edited by Lainey Feingold, Reginé Gilbert and Chancey Fleet"
+          data-cover="https://cdn.prod.website-files.com/67507636f665703150ecbcc6/693a38f983d6456839d20499_91syFC-2reL._SY466_.jpg" data-spine-image="" data-spine-color=""
+          data-buy="https://amzn.to/48MFT0O" data-url="https://a11ybookclub.com/books/digital-accessibility-ethics" data-pages="368">
+        <article class="book-card">
+          <img class="book-card__cover" loading="lazy" src="https://cdn.prod.website-files.com/67507636f665703150ecbcc6/693a38f983d6456839d20499_91syFC-2reL._SY466_.jpg" alt="Digital Accessibility Ethics: Disability Inclusion in All Things Tech Edited by Lainey Feingold, Regine Gilbert, Chancey Fleet">
+          <h3 class="book-card__title"><a href="https://a11ybookclub.com/books/digital-accessibility-ethics">Digital Accessibility Ethics</a></h3>
+          <p class="book-card__author">Edited by Lainey Feingold, Reginé Gilbert and Chancey Fleet</p>
+          <p class="book-card__desc" data-desc>Explore the Digital Accessibility Ethics Framework and learn how to align products, AI and policy with disability rights and inclusion.</p>
+          <details class="book-card__more">
+            <summary>Details and author<span class="sr-only">: Digital Accessibility Ethics</span></summary>
+            <div class="detail__facts" data-details><ul><li>Print length 368 pages</li><li>Release Day May 6th, 2026 </li><li>Available in Hardcover, Paperback and eBook</li><li>39 Total Authors</li></ul></div>
+            <div class="author-list" data-authors><div class="author"><span class="author__initials" aria-hidden="true">LF</span><div><p class="author__name">Lainey Feingold, Reginé Gilbert and Chancey Fleet</p><p class="author__role">Editors</p><p class="author__bio">Edited by Lainey Feingold, Reginé Gilbert and Chancey Fleet, with 39 authors from 10 countries and one commonwealth, most of them disabled.</p></div></div></div>
+          </details>
+          <a class="book-card__buy" href="https://amzn.to/48MFT0O">Buy on Amazon<span class="sr-only">: Digital Accessibility Ethics</span></a>
+        </article>
+      </li>
+
+      <li class="book-item"
+          data-title="Inclusive Design for a Digital World (2nd Edition)" data-subtitle="Designing with Accessibility in Mind (Design Thinking)" data-author="Regine M. Gilbert"
+          data-cover="https://cdn.prod.website-files.com/67507636f665703150ecbcc6/6937a185293cffe24308d0a8_71EQ6EfDW5L._SY466_.jpg" data-spine-image="" data-spine-color=""
+          data-buy="https://amzn.to/4prnYE1" data-url="https://a11ybookclub.com/books/inclusive-design-for-a-digital-world-2nd-edition" data-pages="408">
+        <article class="book-card">
+          <img class="book-card__cover" loading="lazy" src="https://cdn.prod.website-files.com/67507636f665703150ecbcc6/6937a185293cffe24308d0a8_71EQ6EfDW5L._SY466_.jpg" alt="">
+          <h3 class="book-card__title"><a href="https://a11ybookclub.com/books/inclusive-design-for-a-digital-world-2nd-edition">Inclusive Design for a Digital World (2nd Edition)</a></h3>
+          <p class="book-card__author">Regine M. Gilbert</p>
+          <p class="book-card__desc" data-desc>A practical, globally focused guide to inclusive digital design that helps teams apply WCAG 2.2, navigate new regulations, and accessible design.</p>
+          <details class="book-card__more">
+            <summary>Details and author<span class="sr-only">: Inclusive Design for a Digital World (2nd Edition)</span></summary>
+            <div class="detail__facts" data-details><ul><li>Print length 408 pages</li><li>Publication date November 2, 2025</li><li>Available in <a href="https://amzn.to/4prnYE1" target="_blank">Paperback on Amazon</a></li><li>Available to purchase or rent as<a href="https://@Jon Farrell would you like to host in February instead for https://www.a11ybookclub.com/books/designing-accessible-learning-content    @Britne Jenke, CPACC, CPTD, SPHR I will try Luma for the event and would you like to host the meeting in March for https://www.a11ybookclub.com/books/accessible-communications" target="_blank"> Ebook on Google Books</a></li></ul></div>
+            <div class="author-list" data-authors><div class="author"><img class="author__photo" src="https://cdn.prod.website-files.com/67507636f665703150ecbcc6/683fd96859a40f9452fb70f7_regine-gilbert-300.jpg" alt="" width="64" height="64" loading="lazy"><div><p class="author__name">Regine M. Gilbert</p><p class="author__role">User Experience Designer</p><p class="author__bio">Reginé is an Industry Associate Professor and James Weldon Johnson Professor at NYU Tandon School of Engineering. Her work covers digital accessibility, inclusive design and immersive media.</p></div></div></div>
+          </details>
+          <a class="book-card__buy" href="https://amzn.to/4prnYE1">Buy on Amazon<span class="sr-only">: Inclusive Design for a Digital World (2nd Edition)</span></a>
+        </article>
+      </li>
+
+      <li class="book-item"
+          data-title="Designing Accessible Learning Content" data-subtitle="A Practical Guide to Applying best-practice Accessibility Standards to L&amp;D Resources" data-author="Susi Miller"
+          data-cover="https://cdn.prod.website-files.com/67507636f665703150ecbcc6/689391a48604e3b8e4da3d45_51X1Vd3k-gL._SY445_SX342_ControlCacheEqualizer_.jpg" data-spine-image="" data-spine-color=""
+          data-buy="https://amzn.to/4lcqUkH" data-url="https://a11ybookclub.com/books/designing-accessible-learning-content" data-pages="408">
+        <article class="book-card">
+          <img class="book-card__cover" loading="lazy" src="https://cdn.prod.website-files.com/67507636f665703150ecbcc6/689391a48604e3b8e4da3d45_51X1Vd3k-gL._SY445_SX342_ControlCacheEqualizer_.jpg" alt="Designing Accessible Learning Content: A Practical Guide to Applying best-practice Accessibility Standards to L&amp;D Resources book cover">
+          <h3 class="book-card__title"><a href="https://a11ybookclub.com/books/designing-accessible-learning-content">Designing Accessible Learning Content</a></h3>
+          <p class="book-card__author">Susi Miller</p>
+          <p class="book-card__desc" data-desc>Design accessible L&amp;D content with WCAG 2.2 best practices. A practical guide for inclusive digital learning, testing, and design.</p>
+          <details class="book-card__more">
+            <summary>Details and author<span class="sr-only">: Designing Accessible Learning Content</span></summary>
+            <div class="detail__facts" data-details><ul id=""><li id="">Print length 408 pages</li><li id="">Publication date January 28, 2025</li><li id="">Available in Paperback, Hardcover, and Kindle eBook</li></ul></div>
+            <div class="author-list" data-authors><div class="author"><img class="author__photo" src="https://cdn.prod.website-files.com/67507636f665703150ecbcc6/689391913584f7ea422adb7d_1623841933918.jpg" alt="" width="64" height="64" loading="lazy"><div><p class="author__name">Susi Miller</p><p class="author__role">eLearning Accessibility Expert</p><p class="author__bio">Susi founded eLaHub and has more than 30 years in learning and development. Her accessible learning content was shortlisted for a Learning Technologies Award.</p><img class="author__logo" src="https://cdn.prod.website-files.com/67507636f665703150ecbcc6/6893919af3f1d8c09dd87aee_1645184436812.jpg" alt="eLa Hub logo" loading="lazy"></div></div></div>
+          </details>
+          <a class="book-card__buy" href="https://amzn.to/4lcqUkH">Buy on Amazon<span class="sr-only">: Designing Accessible Learning Content</span></a>
+        </article>
+      </li>
+
+      <li class="book-item"
+          data-title="Inclusive Design for Accessibility" data-subtitle="A practical guide to digital accessibility, UX, and inclusive web and app design" data-author="12 authors, foreword by Glenda Sims"
+          data-cover="https://cdn.prod.website-files.com/67507636f665703150ecbcc6/68937ead2d7a4c2addd24e62_71iI7A%2B4fRL._SY385_.jpg" data-spine-image="" data-spine-color=""
+          data-buy="https://amzn.to/3UgIJEs" data-url="https://a11ybookclub.com/books/inclusive-design-for-accessibility" data-pages="322">
+        <article class="book-card">
+          <img class="book-card__cover" loading="lazy" src="https://cdn.prod.website-files.com/67507636f665703150ecbcc6/68937ead2d7a4c2addd24e62_71iI7A%2B4fRL._SY385_.jpg" alt="Inclusive Design for Accessibility: A practical guide to digital accessibility, UX, and inclusive web and app design book cover">
+          <h3 class="book-card__title"><a href="https://a11ybookclub.com/books/inclusive-design-for-accessibility">Inclusive Design for Accessibility</a></h3>
+          <p class="book-card__author">12 authors, foreword by Glenda Sims</p>
+          <p class="book-card__desc" data-desc>Explore practical strategies for inclusive design, accessibility, UX, and web development in this essential accessibility guide.</p>
+          <details class="book-card__more">
+            <summary>Details and author<span class="sr-only">: Inclusive Design for Accessibility</span></summary>
+            <div class="detail__facts" data-details><ul id=""><li id="">Print length 322 pages</li><li id="">Publication date August 7, 2025</li><li id="">Available in Paperback and Kindle eBook</li></ul></div>
+            <div class="author-list" data-authors><div class="author"><span class="author__initials" aria-hidden="true">CA</span><div><p class="author__name">12 contributing authors</p><p class="author__bio">Twelve accessibility educators, practitioners, researchers and advocates, including Nandita Gupta, with a foreword by Glenda Sims.</p></div></div></div>
+          </details>
+          <a class="book-card__buy" href="https://amzn.to/3UgIJEs">Buy on Amazon<span class="sr-only">: Inclusive Design for Accessibility</span></a>
+        </article>
+      </li>
+
+      <li class="book-item"
+          data-title="Practical Web Accessibility" data-subtitle="A Comprehensive Guide to Digital Inclusion - Second Edition" data-author="Ashley Firth"
+          data-cover="https://cdn.prod.website-files.com/67507636f665703150ecbcc6/675207c32779b7ca46ee995a_61ZIIPJBNJL._SY466_.jpg" data-spine-image="" data-spine-color=""
+          data-buy="https://amzn.to/4g0nvnx" data-url="https://a11ybookclub.com/books/practical-web-accessibility" data-pages="572">
+        <article class="book-card">
+          <img class="book-card__cover" loading="lazy" src="https://cdn.prod.website-files.com/67507636f665703150ecbcc6/675207c32779b7ca46ee995a_61ZIIPJBNJL._SY466_.jpg" alt="Cover of &#x27;Practical Web Accessibility: A Comprehensive Guide to Digital Inclusion, Second Edition&#x27; by Ashley Firth, featuring a modern and inclusive design.">
+          <h3 class="book-card__title"><a href="https://a11ybookclub.com/books/practical-web-accessibility">Practical Web Accessibility</a></h3>
+          <p class="book-card__author">Ashley Firth</p>
+          <p class="book-card__desc" data-desc>Learn practical, modern techniques to build WCAG‑aligned websites that work for disabled people across devices, browsers and assistive tech.</p>
+          <details class="book-card__more">
+            <summary>Details and author<span class="sr-only">: Practical Web Accessibility</span></summary>
+            <div class="detail__facts" data-details><ul id=""><li id="">Print length 572 pages</li><li id="">Publication date April 18, 2024</li><li id="">Available in Paperback and Kindle eBook</li></ul></div>
+            <div class="author-list" data-authors><div class="author"><img class="author__photo" src="https://cdn.prod.website-files.com/67507636f665703150ecbcc6/675207c660512214fbdcdc96_1635500420828.jpg" alt="" width="64" height="64" loading="lazy"><div><p class="author__name">Ashley Firth</p><p class="author__role">Global Director of Engineering</p><p class="author__bio">Ashley is Global Director of Engineering at Octopus Energy. His FAIR framework and ACCESS checklist grew out of years of accessibility consulting.</p><img class="author__logo" src="https://cdn.prod.website-files.com/67507636f665703150ecbcc6/675207c80832bcd40e6cb94a_octopusenergy_logo.jpg" alt="Octopus Energy logo" loading="lazy"></div></div></div>
+          </details>
+          <a class="book-card__buy" href="https://amzn.to/4g0nvnx">Buy on Amazon<span class="sr-only">: Practical Web Accessibility</span></a>
+        </article>
+      </li>
+
+      <li class="book-item"
+          data-title="Agile Accessibility Handbook" data-subtitle="A Practical Guide to Accessible Software Development at Scale" data-author="Dylan Barrell"
+          data-cover="https://cdn.prod.website-files.com/67507636f665703150ecbcc6/6764a7b8deaef4de4eb2bad3_71nADYEWADL._SY425_.jpg" data-spine-image="" data-spine-color=""
+          data-buy="https://amzn.to/41kShTn" data-url="https://a11ybookclub.com/books/agile-accessibility-handbook" data-pages="160">
+        <article class="book-card">
+          <img class="book-card__cover" loading="lazy" src="https://cdn.prod.website-files.com/67507636f665703150ecbcc6/6764a7b8deaef4de4eb2bad3_71nADYEWADL._SY425_.jpg" alt="Cover of &#x27;Agile Accessibility Handbook&#x27; by Dylan Barrell, featuring a minimalist design with bold typography.">
+          <h3 class="book-card__title"><a href="https://a11ybookclub.com/books/agile-accessibility-handbook">Agile Accessibility Handbook</a></h3>
+          <p class="book-card__author">Dylan Barrell</p>
+          <p class="book-card__desc" data-desc>The Agile Accessibility Handbook offers a practical roadmap for accessible software development on a large scale.</p>
+          <details class="book-card__more">
+            <summary>Details and author<span class="sr-only">: Agile Accessibility Handbook</span></summary>
+            <div class="detail__facts" data-details><ul id=""><li id="">Print length 160 pages</li><li id="">Publication date November 3, 2020</li><li id="">Available in Hardcover and eBook</li></ul></div>
+            <div class="author-list" data-authors><div class="author"><img class="author__photo" src="https://cdn.prod.website-files.com/67507636f665703150ecbcc6/6750a380d52f090939826e94_658fc185729a651f8bfb29ec_dylan-p-500.jpg" alt="" width="64" height="64" loading="lazy"><div><p class="author__name">Dylan Barrell</p><p class="author__role">Chief Technology Officer</p><p class="author__bio">Dylan is Chief Technology Officer at Deque. He brings about 20 years across technology development, product management and corporate development.</p><img class="author__logo" src="https://cdn.prod.website-files.com/67507636f665703150ecbcc6/6750a383a3a3638a2582750c_658fc15460c313eea339544e_deque-logo-facebook-p-500.png" alt="Deque logo" loading="lazy"></div></div></div>
+          </details>
+          <a class="book-card__buy" href="https://amzn.to/41kShTn">Buy on Amazon<span class="sr-only">: Agile Accessibility Handbook</span></a>
+        </article>
+      </li>
+
+      <li class="book-item"
+          data-title="Accessible UX by Design" data-subtitle="The Business Case for Scalable Inclusion" data-author="Crystal Scott"
+          data-cover="" data-spine-image="" data-spine-color="#0b5d63"
+          data-buy="" data-url="https://a11ybookclub.com/books/accessible-ux-by-design" data-pages="">
+        <article class="book-card">
+          <div class="book-card__cover book-card__cover--placeholder" aria-hidden="true">Accessible UX by Design<br>Coming soon</div>
+          <h3 class="book-card__title"><a href="https://a11ybookclub.com/books/accessible-ux-by-design">Accessible UX by Design</a></h3>
+          <p class="book-card__author">Crystal Scott</p>
+          <p class="book-card__desc" data-desc>Crystal Scott makes the business case for building inclusion into UX at scale. Forthcoming, with a release date to be announced.</p>
+          <details class="book-card__more">
+            <summary>Details and author<span class="sr-only">: Accessible UX by Design</span></summary>
+            <div class="detail__facts" data-details><ul><li>Forthcoming</li><li>Publication date to be announced</li></ul></div>
+            <div class="author-list" data-authors><div class="author"><span class="author__initials" aria-hidden="true">CS</span><div><p class="author__name">Crystal Scott</p><p class="author__role">CPWA, Founder of Graceful Web Studio and the Accessibility Book Club</p><p class="author__bio">Crystal is a Certified Professional in Web Accessibility and a Certified Webflow Expert. She founded Graceful Web Studio and leads the Accessibility Book Club.</p></div></div></div>
+          </details>
+          
+        </article>
+      </li>
+    </ul>
+  </section>
+
+  <p class="disclosure">As an Amazon Associate, the Accessibility Book Club earns from qualifying purchases. It doesn't change the price you pay.</p>
+</main>
+
+<script type="module" src="dist/shelf.js"></script>
+</body>
+</html>
