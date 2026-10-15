@@ -1,4 +1,4 @@
-/*! a11ybookclub-shelf v1.4.3 | Accessibility Book Club | MIT */
+/*! a11ybookclub-shelf v1.5.0 | Accessibility Book Club | MIT */
 /* ==========================================================================
    ACCESSIBILITY BOOK CLUB · 3D SHELF
    - Source of truth: the .shelf_book-item list above (the Webflow Collection List).
@@ -142,6 +142,15 @@ const LIGHT = [250, 247, 242], DARK = [23, 20, 15];
 
 /** Given a background color, return { bg, fg } with fg/bg >= target.
     Picks light or dark text, then nudges the background (never the text) until it passes. */
+/** Open-book panel colors: always a light tint of the cover with near-black text.
+    The tint lightens until the text reaches 7:1, so body text, links and the black
+    focus ring all pass on every cover (SC 1.4.3, 1.4.6, 1.4.11). */
+const INK = [20, 20, 20];
+function lightPair(rgb, target = 7) {
+  let bg = rgb.slice();
+  for (let i = 0; i < 60 && contrast(INK, bg) < target; i++) bg = mix(bg, [255, 255, 255], 0.05);
+  return { bg, fg: INK, ratio: contrast(INK, bg) };
+}
 function accessiblePair(rgb, target = 4.5) {
   let bg = rgb.slice();
   const useLight = contrast(LIGHT, bg) >= contrast(DARK, bg);
@@ -414,7 +423,7 @@ class Shelf {
       const coverTex = new THREE.Texture(coverSrc); coverTex.colorSpace = THREE.SRGBColorSpace; coverTex.anisotropy = 8; coverTex.needsUpdate = true;
 
       // Detail panel colors from the cover's dominant color, checked to 4.5:1
-      book.pair = accessiblePair(dominantColor(coverSrc), 4.5);
+      book.pair = lightPair(dominantColor(coverSrc));
 
       const mat = (opts) => new THREE.MeshStandardMaterial({ roughness: 0.78, metalness: 0, ...opts }); // matte printed board
       const paperMat = mat({ map: this.paper, roughness: 0.9 });
@@ -532,12 +541,14 @@ class Shelf {
           a.quat.slerp(b.quat, e);
         } else {
           // others slide out above and below
-          a.pos.y += Math.sign(i - this.current) * -e * this.visH;
+          a.pos.y += Math.sign(i - this.current) * -e * this.visH * 1.6;   // well clear of the frame
         }
         // ease toward the target pose so hover lifts are smooth
         const m = book.mesh, s = reduceMotion ? 1 : 1 - Math.exp(-dt * 14);
         m.position.lerp(a.pos, i === this.current && this.t > 0 && this.t < 1 ? 1 : s);
         m.quaternion.slerp(a.quat, i === this.current && this.t > 0 && this.t < 1 ? 1 : s);
+        // Once a book is open, only that book is drawn (no neighbors peeking in on short phone stages)
+        m.visible = i === this.current || e < 0.98;
       });
 
       this.renderer.render(this.scene, this.camera);

@@ -1,4 +1,4 @@
-/*! a11ybookclub-shelf v1.4.3 | MIT */
+/*! a11ybookclub-shelf v1.5.0 | MIT */
 /* =========================================================
      DESIGN TOKENS
      Swap these for the Webflow site variables once the new
@@ -25,12 +25,16 @@
     overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
   }
 
-  /* Two-tone focus ring: reads on any background, including sampled cover colors (SC 2.4.7, 2.4.13) */
+  /* Focus ring: always black, with a white halo between the ring and the element.
+     Black passes on every light surface; the white halo carries it on the dark stage (SC 2.4.7, 2.4.13). */
   :focus-visible {
-    outline: 3px solid currentColor;
+    outline: 3px solid #000;
     outline-offset: 3px;
-    box-shadow: 0 0 0 6px var(--ring-contrast, transparent);
-    border-radius: 4px;
+    box-shadow: 0 0 0 6px #fff;
+  }
+  /* The site's global focus styles are more specific; inside this component the black ring always wins */
+  .view-toggle :focus-visible, .shelf :focus-visible, .shelf_list-section :focus-visible {
+    outline: 3px solid #000 !important; outline-offset: 3px !important; box-shadow: 0 0 0 6px #fff !important;
   }
 
 
