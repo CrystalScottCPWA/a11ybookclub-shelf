@@ -1,4 +1,4 @@
-/*! a11ybookclub-shelf v1.1.0 | Accessibility Book Club | MIT */
+/*! a11ybookclub-shelf v1.1.1 | Accessibility Book Club | MIT */
 /* ==========================================================================
    ACCESSIBILITY BOOK CLUB · 3D SHELF
    - Source of truth: the .shelf_book-item list above (the Webflow Collection List).
@@ -48,7 +48,9 @@ let shelf = null;
 /* Webflow outputs empty CMS bindings with class w-dyn-bind-empty; treat those as missing */
 const txt = n => (n && !n.classList.contains('w-dyn-bind-empty') ? n.textContent.trim() : '');
 const initialsOf = name => {
-  const p = name.split(/\s+/).filter(w => /^[A-Za-zÀ-ɏ]/.test(w));
+  // Several people in one field ("A, B and C, editors (39 authors)"): use the first person's initials
+  const first = name.split(/,|\s+and\s+|\(/)[0];
+  const p = first.split(/\s+/).filter(w => /^[A-Za-zÀ-ɏ]/.test(w));
   return p.length ? (p[0][0] + (p.length > 1 ? p[p.length - 1][0] : '')).toUpperCase() : '';
 };
 
