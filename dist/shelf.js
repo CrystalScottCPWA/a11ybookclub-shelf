@@ -1,4 +1,4 @@
-/*! a11ybookclub-shelf v1.4.0 | Accessibility Book Club | MIT */
+/*! a11ybookclub-shelf v1.4.1 | Accessibility Book Club | MIT */
 /* ==========================================================================
    ACCESSIBILITY BOOK CLUB · 3D SHELF
    - Source of truth: the .shelf_book-item list above (the Webflow Collection List).
@@ -401,7 +401,8 @@ class Shelf {
 
       const mat = (opts) => new THREE.MeshStandardMaterial({ roughness: 0.78, metalness: 0, ...opts }); // matte printed board
       const paperMat = mat({ map: this.paper, roughness: 0.9 });
-      const spineMat = mat({ map: spineTexture(book, coverSrc) });
+      const printed = map => new THREE.MeshBasicMaterial({ map });   // unlit: true colors, no gray cast
+      const spineMat = printed(spineTexture(book, coverSrc));
       // We don't design the back cover: it's a plain wrap in the spine color
       const backMat = mat({ color: new THREE.Color().setRGB(...book.spineRgb.map(v => v / 255), THREE.SRGBColorSpace) });
       // Box faces: +x page edge, -x spine, +y/-y page edges, +z front cover, -z back cover
@@ -409,7 +410,7 @@ class Shelf {
         paperMat,
         spineMat,
         paperMat, paperMat,
-        mat({ map: coverTex, roughness: 0.7 }),
+        printed(coverTex),
         backMat,
       ];
       const mesh = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), materials);

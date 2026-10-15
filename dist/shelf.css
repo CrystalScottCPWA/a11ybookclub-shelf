@@ -1,4 +1,4 @@
-/*! a11ybookclub-shelf v1.4.0 | MIT */
+/*! a11ybookclub-shelf v1.4.1 | MIT */
 /* =========================================================
      DESIGN TOKENS
      Swap these for the Webflow site variables once the new
@@ -181,12 +181,12 @@
   /* Author card: name, role, short bio. Headshots and employer logos are intentionally not shown. */
   .shelf_author { display: block; margin: 0 0 1.25rem; max-width: 34rem; }
   .shelf_author-photo, .shelf_author-initials, .shelf_author-logo { display: none !important; }
-  .shelf_author-name { margin: 0; font-weight: 700; }
-  .shelf_author-role { margin: 0 0 .35rem; font-size: .95rem; }
+  .shelf_author-name { margin: 0 0 .2rem; font-weight: 700; line-height: 1.3; }
+  .shelf_author-role { margin: 0 0 .5rem; font-size: .95rem; line-height: 1.4; }
   .shelf_author-bio { margin: 0 0 .5rem; font-size: .95rem; }
 
   /* List view shelf_disclosure for details + authors */
-  .shelf_book-more { margin: auto 0 1rem; border-top: 1px solid var(--frame-line); border-bottom: 1px solid var(--frame-line); }
+  .shelf_book-more { margin: 0 0 1rem; }
   /* Webflow renders text blocks as divs inside summary and the buy link: keep them inline */
   .shelf_book-more summary > div, .shelf_book-buy > div { display: inline; }
   .shelf_book-more summary {
@@ -203,8 +203,14 @@
   }
   .shelf_book-more[open] > summary::after { transform: translateY(25%) rotate(-135deg); }
   .shelf_book-more summary:hover { text-decoration: underline; text-underline-offset: 3px; }
-  .shelf_book-more[open] > summary { margin-bottom: .5rem; }
-  .shelf_book-more .shelf_detail-facts ul { margin-bottom: 1rem; }
+  .shelf_book-more[open] > summary { margin-bottom: .25rem; }
+  /* Panel spacing. Webflow zeroes the last child's margin inside rich text, so the gap
+     after the facts list goes on the rich text block itself. */
+  .shelf_book-more .shelf_detail-facts { margin: 0 0 1.25rem; }
+  .shelf_book-more .shelf_detail-facts ul { margin: 0; padding-left: 1.2rem; }
+  .shelf_book-more .shelf_detail-facts li { margin: 0 0 .3rem; }
+  .shelf_book-more .shelf_author { margin: 0 0 1.25rem; }
+  .shelf_book-more .shelf_author:last-child { margin-bottom: .5rem; }
 
   /* While a book is open, the stack controls are hidden (removed from tab order too) */
   .shelf.is-open .shelf__bar,
@@ -236,12 +242,12 @@
     --frame-bg: #ececea; --frame-line: #d6d4ce; }   /* frame: neutral gray like the Annual Reading List cards */
   .shelf_book-list {
     list-style: none; margin: 0; padding: 0;
-    display: grid; gap: 3rem 2rem;
+    display: grid; gap: 3rem 2rem; align-items: start;   /* start: no card stretches to match an open neighbor */
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
   @media (max-width: 991px) { .shelf_book-list { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   @media (max-width: 600px) { .shelf_book-list { grid-template-columns: 1fr; } }
-  .shelf_book-card { display: flex; flex-direction: column; height: 100%; }
+  .shelf_book-card { display: flex; flex-direction: column; }
   .shelf_book-cover {
     display: block; width: 100%; aspect-ratio: 1 / 1; object-fit: contain;
     padding: clamp(1.5rem, 3vw, 2.5rem); box-sizing: border-box;
@@ -257,13 +263,11 @@
   .shelf_book-author { margin: 0 0 .5rem; color: var(--page-muted); font-weight: 700; font-size: .95rem; }
   .shelf_book-desc { margin: 0 0 1rem; font-size: .95rem; }
   .shelf_book-buy {
-    margin-top: auto; align-self: flex-start;
+    align-self: flex-start;
     display: inline-flex; align-items: center; min-height: var(--target); padding: .4rem 1rem;
     border: 2px solid var(--page-fg); border-radius: 999px; font-weight: 700; text-decoration: none;
   }
   .shelf_book-buy:hover { background: var(--page-fg); color: var(--page-bg); }
-  /* Details row and Buy sit at the bottom of every card so they line up across a row */
-  .shelf_book-more ~ .shelf_book-buy { margin-top: 0; }
 
   .shelf_disclosure { max-width: 72rem; margin: 0 auto; padding: 1.5rem 1rem 3rem; color: var(--page-muted); font-size: .95rem; }
 
