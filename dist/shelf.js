@@ -1,4 +1,4 @@
-/*! a11ybookclub-shelf v1.2.0 | Accessibility Book Club | MIT */
+/*! a11ybookclub-shelf v1.3.0 | Accessibility Book Club | MIT */
 /* ==========================================================================
    ACCESSIBILITY BOOK CLUB · 3D SHELF
    - Source of truth: the .shelf_book-item list above (the Webflow Collection List).
@@ -314,6 +314,9 @@ class Shelf {
     this.active = root.dataset.view === 'shelf';
     this.engaged = false;      // mouse wheel only moves the stack after the visitor clicks into it
     this.hover = -1;
+    // Detail view tilt: the open book turns toward the pointer (radians, eased in the frame loop)
+    this.tilt = { x: 0, y: 0 };
+    this.tiltTarget = { x: 0, y: 0 };
     this.band = { mid: 0, half: 1.5 };   // replaced with measured values in resize()
 
     this.initRenderer();
@@ -334,6 +337,8 @@ class Shelf {
     // Soft key light from the upper left, warm fill from below, like a reading lamp
     this.scene.add(new THREE.HemisphereLight(0xffffff, 0x3a3028, 1.55));
     const key = new THREE.DirectionalLight(0xffffff, 0.95); key.position.set(-2, 3, 6); this.scene.add(key);
+    // Soft fill from the front and below so the bottom page edge reads as paper when the book tilts
+    const fill = new THREE.DirectionalLight(0xfff4e6, 0.6); fill.position.set(0.5, -5, 1.5); this.scene.add(fill);
 
     this.paper = paperTexture();
     this.raycaster = new THREE.Raycaster();
@@ -463,7 +468,7 @@ class Shelf {
     const visH = 2 * dist * tan;
     const visW = visH * this.camera.aspect;
     out.pos.set(this.narrow ? 0 : -visW * 0.22, this.narrow ? 0.05 : 0, z);
-    out.quat.setFromEuler(new THREE.Euler(-0.04, 0.38, 0.02));
+    out.quat.setFromEuler(new THREE.Euler(-0.14 + this.tilt.x, 0.5 + this.tilt.y, 0.02));
     return out;
   }
 
@@ -487,6 +492,19 @@ class Shelf {
       if (reduceMotion) this.t = target;
       else this.t += Math.sign(target - this.t) * Math.min(Math.abs(target - this.t), dt / CONFIG.openDuration);
       const e = ease(this.t);
+
+      // Tilt eases toward the pointer target. Off under reduced motion (SC 2.3.3).
+      const tk = reduceMotion ? 1 : 1 - Math.exp(-dt * 5);
+      const tx = reduceMotion || !this.open ? 0 : this.tiltTarget.x;
+      const ty = reduceMotion || !this.open ? 0 : this.tiltTarget.y;
+      this.tilt.x += (tx - this.tilt.x) * tk;
+      this.tilt.y += (ty - this.tilt.y) * tk;
+
+      // Open sequence stages follow the book: color once it's past halfway, text once it has landed
+      if (this.open) {
+        if (this.t >= 0.55) this.section.classList.add('is-colored');
+        if (this.t >= 1) this.section.classList.add('is-revealed');
+      }
 
       this.books.forEach((book, i) => {
         this.stackPose(book, i, a);
@@ -550,6 +568,11 @@ class Shelf {
       this.setPointer(e);
       const hit = this.open ? -1 : this.pick();
       if (hit !== this.hover) { this.hover = hit; this.canvas.classList.toggle('is-hovering', hit >= 0); }
+      // Touch in detail view: a sideways drag turns the book (vertical drags still scroll the page)
+      if (this.open && down && down.type === 'touch') {
+        this.tiltTarget.y = Math.max(-0.4, Math.min(0.4, (e.clientX - down.x) / 160 * 0.4));
+        return;
+      }
       if (!down || this.open) return;
       const dx = e.clientX - down.x, dy = e.clientY - down.y;
       // Touch: horizontal swipe only (vertical stays page scroll). Mouse: vertical drag.
@@ -569,6 +592,18 @@ class Shelf {
     };
     this.canvas.addEventListener('pointerup', end);
     this.canvas.addEventListener('pointercancel', () => { down = null; });
+    // Mouse or pen in detail view: the book turns to face the pointer, anywhere over the open section.
+    // Pointer right of the book shows more spine, pointer below shows the top edge, above shows the bottom.
+    this.section.addEventListener('pointermove', e => {
+      if (!this.open || e.pointerType === 'touch' || !this.meshes) return;
+      this.setPointer(e);
+      const c = this.books[this.current].mesh.position.clone().project(this.camera);   // book center in screen space
+      const dx = Math.max(-1, Math.min(1, (this.pointer.x - c.x) / 0.7));
+      const dy = Math.max(-1, Math.min(1, (this.pointer.y - c.y) / 0.7));
+      this.tiltTarget.y = dx * 0.42;                                 // yaw range about 0.08 to 0.92 rad, never past the spine
+      this.tiltTarget.x = Math.max(-0.2, Math.min(0.16, -dy * 0.24));  // with the base angle, the bottom edge shows most of the time
+    });
+    this.section.addEventListener('pointerleave', () => { this.tiltTarget.x = 0; this.tiltTarget.y = 0; });
     this.canvas.addEventListener('pointerleave', () => { this.hover = -1; this.engaged = false; this.canvas.classList.remove('is-hovering'); });
 
     // Wheel / trackpad over the stage moves through the books. At the first or last book the wheel
@@ -654,9 +689,12 @@ class Shelf {
     more.innerHTML = `About this book<span class="sr-only">: ${escapeHtml(book.title)}</span>`;
 
     // Section takes the cover's color; pair is pre-checked to 4.5:1
-    this.section.style.setProperty('--bg', rgbToHex(book.pair.bg));
-    this.section.style.setProperty('--fg', rgbToHex(book.pair.fg));
-    this.section.style.setProperty('--muted', rgbToHex(book.pair.fg));
+    // Applied by the .is-colored stage, not right away
+    this.section.style.setProperty('--open-bg', rgbToHex(book.pair.bg));
+    this.section.style.setProperty('--open-fg', rgbToHex(book.pair.fg));
+    // Safety net: if frames stall (background tab, GPU hiccup), still show everything
+    clearTimeout(this._revealT);
+    this._revealT = setTimeout(() => { if (this.open) this.section.classList.add('is-colored', 'is-revealed'); }, 2500);
 
     this.open = true; this.hover = -1;
     this.section.classList.add('is-open');
@@ -673,10 +711,12 @@ class Shelf {
   closeBook() {
     if (!this.open) return;
     this.open = false;
+    this.tiltTarget.x = 0; this.tiltTarget.y = 0;
     this.detail.hidden = true;
     this.section.style.paddingBottom = '';
-    this.section.classList.remove('is-open');
-    ['--bg', '--fg', '--muted'].forEach(p => this.section.style.removeProperty(p));
+    clearTimeout(this._revealT);
+    this.section.classList.remove('is-open', 'is-colored', 'is-revealed');
+    ['--open-bg', '--open-fg'].forEach(p => this.section.style.removeProperty(p));
     this.openBtn.focus();                         // focus returns to where the visitor was
   }
 

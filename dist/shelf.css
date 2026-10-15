@@ -1,4 +1,4 @@
-/*! a11ybookclub-shelf v1.2.0 | MIT */
+/*! a11ybookclub-shelf v1.3.0 | MIT */
 /* =========================================================
      DESIGN TOKENS
      Swap these for the Webflow site variables once the new
@@ -36,8 +36,12 @@
 
 
   /* ---------- View toggle (two toggle buttons with aria-pressed) ---------- */
-  .view-toggle { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; }
-  .view-toggle__label { font-weight: 700; }
+  /* Label sits above the switch; the pair is centered with room above and below */
+  .view-toggle {
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .6rem;
+    width: 100%; padding-block: clamp(2rem, 4vw, 3rem); text-align: center;
+  }
+  .view-toggle__label { display: block; font-weight: 700; }
   .view-toggle__group {
     display: inline-flex; padding: 4px; gap: 4px;
     border: 2px solid var(--page-fg); border-radius: 999px;
@@ -66,7 +70,7 @@
     position: relative;
     background: var(--bg);
     color: var(--fg);
-    transition: background-color .9s ease, color .9s ease;
+    transition: background-color .7s ease, color .7s ease;
   }
   .shelf__stage {
     position: relative;
@@ -139,6 +143,21 @@
     padding: 5rem clamp(1.25rem, 5vw, 4rem) 3rem 1rem;
   }
   .shelf__detail[hidden] { display: none; }
+
+  /* Open sequence: the book glides in (about 1s, in shelf.js), then the color, then the text.
+     Reduced motion removes all of this (rule at the end): everything appears at once. */
+  /* Stages are set by shelf.js from the book's real progress, so they stay in order on slow devices:
+     .is-colored when the book is a little past halfway, .is-revealed when it has landed. */
+  .shelf.is-colored { --bg: var(--open-bg); --fg: var(--open-fg); --muted: var(--open-fg); }
+  .shelf.is-open:not(.is-revealed) .shelf__detail > * { opacity: 0; }
+  .shelf.is-revealed .shelf__detail > * { animation: shelf-rise .55s cubic-bezier(.2, .7, .2, 1) both; }
+  .shelf.is-revealed .shelf__detail > :nth-child(2) { animation-delay: .06s; }
+  .shelf.is-revealed .shelf__detail > :nth-child(3) { animation-delay: .12s; }
+  .shelf.is-revealed .shelf__detail > :nth-child(4) { animation-delay: .18s; }
+  .shelf.is-revealed .shelf__detail > :nth-child(5) { animation-delay: .24s; }
+  .shelf.is-revealed .shelf__detail > :nth-child(6) { animation-delay: .3s; }
+  .shelf.is-revealed .shelf__detail > :nth-child(n+7) { animation-delay: .36s; }
+  @keyframes shelf-rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
   .detail__back {
     position: absolute; top: 1rem; left: calc(-100% + 1rem);   /* top-left of the stage */
   }
