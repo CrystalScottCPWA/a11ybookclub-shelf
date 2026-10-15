@@ -21,19 +21,19 @@ Inside `<head>`, paste the contents of `dist/head-snippet.html`, then:
 
 ```html
 <!-- Accessibility Book Club shelf styles, pinned to a release -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/CrystalScottCPWA/a11ybookclub-shelf@edb02c6152f14ca09a0609844ac81d24c533f8fd/dist/shelf.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/CrystalScottCPWA/a11ybookclub-shelf@6af00656430fd462994cd71ad251ae0a48d4fc6c/dist/shelf.css">
 ```
 
 Before `</body>`:
 
 ```html
 <!-- Accessibility Book Club shelf, pinned to a release -->
-<script type="module" src="https://cdn.jsdelivr.net/gh/CrystalScottCPWA/a11ybookclub-shelf@edb02c6152f14ca09a0609844ac81d24c533f8fd/dist/shelf.js"></script>
+<script type="module" src="https://cdn.jsdelivr.net/gh/CrystalScottCPWA/a11ybookclub-shelf@6af00656430fd462994cd71ad251ae0a48d4fc6c/dist/shelf.js"></script>
 ```
 
 The URLs are pinned to an exact commit, so nothing on the live page changes until you update them. To ship a change: push it, copy the new commit's full SHA (or create a GitHub release such as `v1.0.1` and use that tag), and update both lines.
 
-Current live version: v1.4.0, commit `edb02c6152f14ca09a0609844ac81d24c533f8fd`.
+Current live version: v1.4.1, commit `6af00656430fd462994cd71ad251ae0a48d4fc6c`.
 
 ## CMS fields (Books collection)
 
