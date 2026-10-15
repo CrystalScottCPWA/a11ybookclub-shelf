@@ -1,4 +1,4 @@
-/*! a11ybookclub-shelf v1.3.0 | MIT */
+/*! a11ybookclub-shelf v1.4.0 | MIT */
 /* =========================================================
      DESIGN TOKENS
      Swap these for the Webflow site variables once the new
@@ -178,29 +178,33 @@
   .detail__authors-heading { margin: 2rem 0 1rem; font-size: 1.15rem; }
 
   /* Author card: shared by the detail panel and the list view */
-  .shelf_author { display: grid; grid-template-columns: 64px 1fr; gap: .9rem; align-items: start; margin: 0 0 1.25rem; max-width: 34rem; }
-  .shelf_author-photo, .shelf_author-initials {
-    width: 64px; height: 64px; border-radius: 50%; object-fit: cover; display: block;
-  }
-  .shelf_author-initials {
-    display: grid; place-items: center; font-weight: 700; font-size: 1.2rem;
-    border: 2px solid currentColor;
-  }
+  /* Author card: name, role, short bio. Headshots and employer logos are intentionally not shown. */
+  .shelf_author { display: block; margin: 0 0 1.25rem; max-width: 34rem; }
+  .shelf_author-photo, .shelf_author-initials, .shelf_author-logo { display: none !important; }
   .shelf_author-name { margin: 0; font-weight: 700; }
   .shelf_author-role { margin: 0 0 .35rem; font-size: .95rem; }
   .shelf_author-bio { margin: 0 0 .5rem; font-size: .95rem; }
-  /* Logos sit on a white chip so a blue logo never disappears into a blue panel (SC 1.4.11) */
-  .shelf_author-logo { display: inline-block; height: 32px; width: auto; max-width: 120px; object-fit: contain;
-    background: #fff; padding: 4px 8px; border-radius: 6px; }
 
   /* List view shelf_disclosure for details + authors */
-  .shelf_book-more { margin: 0 0 1rem; }
+  .shelf_book-more { margin: auto 0 1rem; border-top: 1px solid var(--frame-line); border-bottom: 1px solid var(--frame-line); }
   /* Webflow renders text blocks as divs inside summary and the buy link: keep them inline */
   .shelf_book-more summary > div, .shelf_book-buy > div { display: inline; }
-  .shelf_book-more summary { cursor: pointer; font-weight: 700; min-height: var(--target); display: flex; align-items: center; }
+  .shelf_book-more summary {
+    cursor: pointer; font-weight: 700; min-height: var(--target);
+    display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+    list-style: none; padding: .25rem .25rem .25rem 0;
+  }
+  .shelf_book-more summary::-webkit-details-marker { display: none; }   /* Safari's default triangle */
+  /* Caret: a rotated corner, pointing down when closed and up when open */
+  .shelf_book-more summary::after {
+    content: ""; flex: none; width: .6em; height: .6em; margin: 0 .35rem -.1em 0;
+    border-right: 2.5px solid currentColor; border-bottom: 2.5px solid currentColor;
+    transform: translateY(-25%) rotate(45deg); transition: transform .2s ease;
+  }
+  .shelf_book-more[open] > summary::after { transform: translateY(25%) rotate(-135deg); }
+  .shelf_book-more summary:hover { text-decoration: underline; text-underline-offset: 3px; }
+  .shelf_book-more[open] > summary { margin-bottom: .5rem; }
   .shelf_book-more .shelf_detail-facts ul { margin-bottom: 1rem; }
-  .shelf_book-more .shelf_author { grid-template-columns: 48px 1fr; }
-  .shelf_book-more .shelf_author-photo, .shelf_book-more .shelf_author-initials { width: 48px; height: 48px; font-size: 1rem; }
 
   /* While a book is open, the stack controls are hidden (removed from tab order too) */
   .shelf.is-open .shelf__bar,
@@ -228,20 +232,23 @@
   /* =========================================================
      LIST VIEW (this is the Webflow Collection List)
      ========================================================= */
-  .shelf_list-section { max-width: 72rem; margin: 0 auto; padding: 1rem 1rem 4rem; }
+  .shelf_list-section { max-width: 72rem; margin: 0 auto; padding: 1rem 1rem 4rem;
+    --frame-bg: #ececea; --frame-line: #d6d4ce; }   /* frame: neutral gray like the Annual Reading List cards */
   .shelf_book-list {
     list-style: none; margin: 0; padding: 0;
-    display: grid; gap: 2rem 1.5rem;
-    grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr));
+    display: grid; gap: 3rem 2rem;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
+  @media (max-width: 991px) { .shelf_book-list { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 600px) { .shelf_book-list { grid-template-columns: 1fr; } }
   .shelf_book-card { display: flex; flex-direction: column; height: 100%; }
   .shelf_book-cover {
-    display: block; width: 100%; aspect-ratio: 2 / 3; object-fit: cover;
-    border-radius: 4px; background: #e9e2d6;
-    box-shadow: 0 1px 2px rgb(0 0 0 / .12), 0 8px 24px rgb(0 0 0 / .12);
+    display: block; width: 100%; aspect-ratio: 1 / 1; object-fit: contain;
+    padding: clamp(1.5rem, 3vw, 2.5rem); box-sizing: border-box;
+    background: var(--frame-bg); border: 1px solid var(--frame-line); border-radius: 8px;
   }
   .shelf_cover-placeholder {
-    display: grid; place-items: center; padding: 1rem; text-align: center;
+    display: grid; place-items: center; text-align: center;
     background: var(--accent); color: #fff; font-weight: 700; font-size: 1.2rem; line-height: 1.25;
   }
   .shelf_book-title { margin: 1rem 0 .25rem; font-size: 1.2rem; line-height: 1.25; }
@@ -255,6 +262,8 @@
     border: 2px solid var(--page-fg); border-radius: 999px; font-weight: 700; text-decoration: none;
   }
   .shelf_book-buy:hover { background: var(--page-fg); color: var(--page-bg); }
+  /* Details row and Buy sit at the bottom of every card so they line up across a row */
+  .shelf_book-more ~ .shelf_book-buy { margin-top: 0; }
 
   .shelf_disclosure { max-width: 72rem; margin: 0 auto; padding: 1.5rem 1rem 3rem; color: var(--page-muted); font-size: .95rem; }
 

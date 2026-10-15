@@ -1,4 +1,4 @@
-/*! a11ybookclub-shelf v1.3.0 | Accessibility Book Club | MIT */
+/*! a11ybookclub-shelf v1.4.0 | Accessibility Book Club | MIT */
 /* ==========================================================================
    ACCESSIBILITY BOOK CLUB · 3D SHELF
    - Source of truth: the .shelf_book-item list above (the Webflow Collection List).
@@ -47,6 +47,12 @@ let shelf = null;
    ========================================================================== */
 /* Webflow outputs empty CMS bindings with class w-dyn-bind-empty; treat those as missing */
 const txt = n => (n && !n.classList.contains('w-dyn-bind-empty') ? n.textContent.trim() : '');
+/* Three or more people in one author field ("A, B, C and D" or "A, B and C, editors (39 authors)"):
+   use "A et al." where space is tight (spine, current-book bar, markers, announcements). */
+const shortAuthor = name => {
+  const people = name.replace(/,?\s*editors?\b.*$/i, '').split(/,\s*|\s+and\s+/).filter(Boolean);
+  return people.length > 2 ? `${people[0]} et al.` : name;
+};
 const initialsOf = name => {
   // Several people in one field ("A, B and C, editors (39 authors)"): use the first person's initials
   const first = name.split(/,|\s+and\s+|\(/)[0];
@@ -64,15 +70,8 @@ function tidy(el) {
   el.querySelectorAll('[data-authors] .shelf_author').forEach(card => {
     const name = txt(card.querySelector('.shelf_author-name'));
     if (!name) { card.remove(); return; }
-    const photo = card.querySelector('.shelf_author-photo');
-    if (photo && (photo.classList.contains('w-dyn-bind-empty') || !photo.getAttribute('src'))) {
-      const span = document.createElement('span');
-      span.className = 'shelf_author-initials'; span.setAttribute('aria-hidden', 'true');
-      span.textContent = initialsOf(name);
-      photo.replaceWith(span);
-    }
-    const logo = card.querySelector('.shelf_author-logo');
-    if (logo && (logo.classList.contains('w-dyn-bind-empty') || !logo.getAttribute('src'))) logo.remove();
+    // Headshots and employer logos are not used (too many missing); remove any left in the markup
+    card.querySelectorAll('.shelf_author-photo, .shelf_author-initials, .shelf_author-logo').forEach(n => n.remove());
   });
   const summary = el.querySelector('.shelf_book-more summary [data-summary-label]');
   if (summary) summary.textContent = el.querySelectorAll('[data-authors] .shelf_author').length > 1 ? 'Details and authors' : 'Details and author';
@@ -103,6 +102,7 @@ const books = [...document.querySelectorAll('[data-book-list] .shelf_book-item')
     title: el.dataset.title || txt(q('.shelf_book-title')),
     subtitle: el.dataset.subtitle || txt(q('.shelf_book-subtitle')),
     author: el.dataset.author || txt(q('.shelf_book-author')),
+    authorShort: shortAuthor(el.dataset.author || txt(q('.shelf_book-author'))),
     cover: el.dataset.cover || (cover ? cover.getAttribute('src') : ''),
     spineImage: el.dataset.spineImage || '',
     spineColor: (el.dataset.spineColor || '').trim(),
@@ -258,7 +258,7 @@ function spineTexture(book, coverImg) {
   const fg = rgbToHex(textOn(bg));
   x.fillStyle = fg; x.strokeStyle = fg; x.textBaseline = 'middle';
   const mid = T / 2 + 2, pad = 90;
-  const authorShort = book.author.replace(/^Edited by /, '');
+  const authorShort = book.authorShort.replace(/^Edited by /, '');
 
   const authorSize = Math.min(64, Math.round(T * 0.24));
   x.font = `400 ${authorSize}px ${FONT}`;
@@ -533,7 +533,7 @@ class Shelf {
       const li = document.createElement('li');
       const btn = document.createElement('button');
       btn.type = 'button';
-      btn.setAttribute('aria-label', `${book.title} by ${book.author}`);
+      btn.setAttribute('aria-label', `${book.title} by ${book.authorShort}`);
       btn.addEventListener('click', () => this.goTo(i, { focusMarker: true }));
       li.append(btn); this.markersEl.append(li);
       return btn;
@@ -645,7 +645,7 @@ class Shelf {
     const book = this.books[this.current];
     const n = this.books.length;
     this.openBtn.querySelector('.shelf__open-title').textContent = book.title;
-    this.openBtn.querySelector('.shelf__open-author').textContent = book.author;
+    this.openBtn.querySelector('.shelf__open-author').textContent = book.authorShort;
     this.countEl.textContent = `${this.current + 1} of ${n}`;
     this.prevBtn.setAttribute('aria-disabled', String(this.current === 0));
     this.nextBtn.setAttribute('aria-disabled', String(this.current === n - 1));
@@ -654,7 +654,7 @@ class Shelf {
       m.tabIndex = i === this.current ? 0 : -1;
       if (i === this.current) m.setAttribute('aria-current', 'true'); else m.removeAttribute('aria-current');
     });
-    if (announce) this.announce(`${book.title} by ${book.author}, ${this.current + 1} of ${n}`);
+    if (announce) this.announce(`${book.title} by ${book.authorShort}, ${this.current + 1} of ${n}`);
   }
 
   // Debounced so holding an arrow key doesn't flood the screen reader
@@ -670,7 +670,10 @@ class Shelf {
     const d = this.detail;
     d.querySelector('.detail__title').textContent = book.title;
     const sub = d.querySelector('.detail__subtitle'); sub.textContent = book.subtitle; sub.hidden = !book.subtitle;
-    d.querySelector('.detail__author').textContent = book.author.startsWith('Edited') ? book.author : `By ${book.author}`;
+    const edited = /,\s*editors?\b/i.test(book.author);
+    d.querySelector('.detail__author').textContent = book.author.startsWith('Edited') ? book.author
+      : edited ? `Edited by ${book.author.replace(/,\s*editors?\b\s*/i, ' ').replace(/\s+/g, ' ').trim()}`
+      : `By ${book.author}`;
     d.querySelector('.detail__desc').textContent = book.desc;
     const buy = d.querySelector('[data-detail-buy]');
     buy.hidden = !book.buy; buy.href = book.buy || '#';
