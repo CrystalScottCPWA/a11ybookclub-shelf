@@ -1,4 +1,4 @@
-/*! a11ybookclub-shelf v1.1.1 | Accessibility Book Club | MIT */
+/*! a11ybookclub-shelf v1.2.0 | Accessibility Book Club | MIT */
 /* ==========================================================================
    ACCESSIBILITY BOOK CLUB · 3D SHELF
    - Source of truth: the .shelf_book-item list above (the Webflow Collection List).
@@ -314,6 +314,7 @@ class Shelf {
     this.active = root.dataset.view === 'shelf';
     this.engaged = false;      // mouse wheel only moves the stack after the visitor clicks into it
     this.hover = -1;
+    this.band = { mid: 0, half: 1.5 };   // replaced with measured values in resize()
 
     this.initRenderer();
     this.buildMarkers();
@@ -345,7 +346,7 @@ class Shelf {
   }
 
   resize() {
-    const w = this.stage.clientWidth, h = this.stage.clientHeight;
+    const w = this.canvas.clientWidth, h = this.canvas.clientHeight;   // canvas sits below the instructions row
     if (!w || !h) return;
     this.renderer.setSize(w, h, false);
     this.camera.aspect = w / h;
@@ -358,6 +359,17 @@ class Shelf {
     const zMin = ((7 * 0.24) / 0.8) / (2 * tan);
     this.camera.position.set(0, 0, Math.max(zForWidth, zMin));
     this.visH = 2 * this.camera.position.z * tan;
+    // Band the stack may occupy, in world units at the stack's depth (z = 0).
+    // Top: 20px below the canvas edge. Bottom: 20px above the control bar. Extra pad covers
+    // perspective (books below eye level show their top face) and the current book sliding forward.
+    const wpp = this.visH / h;                                   // world units per CSS pixel
+    const bar = this.section.querySelector('.shelf__bar');
+    const canvasTop = this.canvas.getBoundingClientRect().top;
+    const barTopPx = bar ? bar.getBoundingClientRect().top - canvasTop : h - 100;
+    const top = this.visH / 2 - 20 * wpp;
+    const bottom = this.visH / 2 - (barTopPx - 20) * wpp;
+    const pad = 0.22;                                            // room for the current book sliding toward the camera
+    this.band = { mid: (top + bottom) / 2, half: Math.max(0.3, (top - bottom) / 2 - pad) };
     this.camera.updateProjectionMatrix();
   }
 
@@ -427,14 +439,16 @@ class Shelf {
     // past the first or last book once the stack is taller than the frame
     const lo = Math.floor(this.scroll), hi = Math.min(n - 1, lo + 1), f = this.scroll - lo;
     let center = this.centers[lo] + (this.centers[hi] - this.centers[lo]) * f;
-    const room = this.visH * 0.36;
-    if (this.stackHeight > room * 2) center = Math.max(room, Math.min(this.stackHeight - room, center));
+    // Usable band: from just under the top edge to just above the control bar (measured in resize()).
+    // Clamp so the first and last books land fully inside that band, with padding, never under the bar.
+    const { mid, half } = this.band;
+    if (this.stackHeight > half * 2) center = Math.max(half, Math.min(this.stackHeight - half, center));
     else center = this.stackHeight / 2;
     const pull = Math.max(0, 1 - Math.abs(i - this.scroll));          // 1 for the current book, eased between
     const hover = i === this.hover && !this.open && i !== this.current ? 1 : 0;
     out.pos.set(
       book.jitter.x + pull * 0.3 + hover * 0.08,                       // current book slides out to the right
-      -(this.centers[i] - center) + this.visH * 0.07,                  // nudged up to clear the control bar
+      mid - (this.centers[i] - center),                                // centered in the band above the control bar
       pull * 0.15 + hover * 0.05
     );
     out.quat.setFromEuler(new THREE.Euler(0, Math.PI / 2, Math.PI / 2 + book.jitter.r, 'ZYX'));
@@ -557,10 +571,11 @@ class Shelf {
     this.canvas.addEventListener('pointercancel', () => { down = null; });
     this.canvas.addEventListener('pointerleave', () => { this.hover = -1; this.engaged = false; this.canvas.classList.remove('is-hovering'); });
 
-    // Wheel: only after the visitor clicks into the stage, and never at the ends (no scroll trap, SC 2.1.2)
+    // Wheel / trackpad over the stage moves through the books. At the first or last book the wheel
+    // goes back to the page, so the stage is never a scroll trap (SC 2.1.2).
     let wheelAcc = 0, wheelLock = 0;
     this.canvas.addEventListener('wheel', e => {
-      if (!this.engaged || this.open) return;
+      if (this.open) return;
       const dir = Math.sign(e.deltaY);
       const atEnd = (dir > 0 && this.current === this.books.length - 1) || (dir < 0 && this.current === 0);
       if (atEnd) return;               // let the page scroll

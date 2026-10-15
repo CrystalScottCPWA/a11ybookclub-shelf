@@ -1,4 +1,4 @@
-/*! a11ybookclub-shelf v1.1.0 | MIT */
+/*! a11ybookclub-shelf v1.2.0 | MIT */
 /* =========================================================
      DESIGN TOKENS
      Swap these for the Webflow site variables once the new
@@ -70,8 +70,8 @@
   }
   .shelf__stage {
     position: relative;
-    height: min(78vh, 760px);
-    min-height: 460px;
+    height: min(86vh, 980px);
+    min-height: 560px;
   }
   .shelf__canvas {
     position: absolute; left: 0; right: 0; bottom: 0; top: 3.25rem; width: 100%; height: calc(100% - 3.25rem);
@@ -190,7 +190,7 @@
 
   /* Narrow screens: panel moves below the book and the page scrolls normally (SC 1.4.10) */
   @media (max-width: 760px) {
-    .shelf__stage { height: 64vh; min-height: 380px; }
+    .shelf__stage { height: 72vh; min-height: 440px; }
     .shelf.is-open .shelf__stage { height: 52vh; }
     .shelf__detail { position: static; width: auto; min-height: 0; padding: 1.5rem 1rem 2.5rem; }
     .detail__back { position: static; margin-bottom: 1rem; }
