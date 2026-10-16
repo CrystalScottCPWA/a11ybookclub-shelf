@@ -1,4 +1,4 @@
-/*! a11ybookclub-shelf v1.5.0 | Accessibility Book Club | MIT */
+/*! a11ybookclub-shelf v1.5.1 | Accessibility Book Club | MIT */
 /* ==========================================================================
    ACCESSIBILITY BOOK CLUB · 3D SHELF
    - Source of truth: the .shelf_book-item list above (the Webflow Collection List).
@@ -377,6 +377,7 @@ class Shelf {
   }
 
   resize() {
+    this.fitStageToStack();
     const w = this.canvas.clientWidth, h = this.canvas.clientHeight;   // canvas sits below the instructions row
     if (!w || !h) return;
     this.renderer.setSize(w, h, false);
@@ -402,6 +403,23 @@ class Shelf {
     const pad = 0.22;                                            // room for the current book sliding toward the camera
     this.band = { mid: (top + bottom) / 2, half: Math.max(0.3, (top - bottom) / 2 - pad) };
     this.camera.updateProjectionMatrix();
+  }
+
+  /* Phones: make the stage tall enough to show every book at once.
+     At phone widths the camera sizes each spine to 68% of the width, so pixels per world unit is
+     known from the width alone; the stage height is the stack in pixels plus room for the
+     instructions row above and the control bar below. Desktop keeps the scrolling stack. */
+  fitStageToStack() {
+    const sw = this.stage.clientWidth;
+    if (sw > 760 || !this.stackHeight) { this.stage.style.removeProperty('--stage-h'); return; }
+    const ppu = (sw * 0.68) / CONFIG.coverHeight;                    // CSS px per world unit
+    const bar = this.section.querySelector('.shelf__bar');
+    const barH = bar ? bar.offsetHeight : 64;
+    const instructionsH = 52;                                         // 3.25rem row above the canvas
+    const pad = 0.7;                                                  // world units: perspective faces + current book sliding forward
+    const need = Math.ceil((this.stackHeight + pad) * ppu + instructionsH + 20 + barH + 40);
+    const current = parseFloat(this.stage.style.getPropertyValue('--stage-h')) || 0;
+    if (Math.abs(current - need) > 2) this.stage.style.setProperty('--stage-h', need + 'px');   // guard: no resize loop
   }
 
   /* ----- Load covers and build one mesh per book ----- */
@@ -479,7 +497,7 @@ class Shelf {
     const pull = Math.max(0, 1 - Math.abs(i - this.scroll));          // 1 for the current book, eased between
     const hover = i === this.hover && !this.open && i !== this.current ? 1 : 0;
     out.pos.set(
-      book.jitter.x + pull * 0.3 + hover * 0.08,                       // current book slides out to the right
+      book.jitter.x + pull * (this.narrow ? 0.1 : 0.3) + hover * 0.08,  // current book slides out to the right (less on phones so it stays in frame)
       mid - (this.centers[i] - center),                                // centered in the band above the control bar
       pull * 0.15 + hover * 0.05
     );
